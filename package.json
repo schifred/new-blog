@@ -15,6 +15,7 @@
     "@neilsustc/markdown-it-katex": "^0.5.0",
     "@upupming/hexo-renderer-markdown-it-plus": "^2.0.2",
     "hexo": "^4.2.1",
+    "hexo-abbrlink": "^2.2.1",
     "hexo-asset-image": "https://github.com/CodeFalling/hexo-asset-image",
     "hexo-generator-archive": "^1.0.0",
     "hexo-generator-category": "^1.0.0",
