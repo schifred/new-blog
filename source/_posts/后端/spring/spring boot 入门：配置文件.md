@@ -189,11 +189,11 @@ spring:
 
 #### log
 
-使用日志服务可先在 pom.xml 中添加 log4j-over-slf4j、jcl-over-slf4、jul-to-slf4j 依赖。
+使用日志服务可先在 pom.xml 中添加 log4j-over-slf4j、jcl-over-slf4、jul-to-slf4j、logback-core 依赖。
 
 log4j-over-slf4j 通过代理将系统中所有 log4j 日志（含第三方库的）路由到 slf4j上。jcl-over-slf4 将 apache commons logging 路由到 slf4j上。jul-over-slf4 将 java.util.logging 路由到 slf4j上。
 
-更多内容可戳 [log4j-over-slf4j 工作原理详解](https://blog.csdn.net/john1337/article/details/76152906)。
+更多内容可戳 [log4j-over-slf4j 工作原理详解](https://blog.csdn.net/john1337/article/details/76152906)、[logback 详解](https://blog.csdn.net/Sadlay/article/details/88732271)、[logback中文手册](http://www.logback.cn/)。
 
 ```yml
 logging:
@@ -213,6 +213,7 @@ logging:
     <!-- https://github.com/spring-projects/spring-boot/blob/v1.4.2.RELEASE/spring-boot/src/main/resources/org/springframework/boot/logging/logback/defaults.xml -->
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
+    <!-- 读取 application.yml 配置 -->
     <springProperty scope="context" name="APP_NAME" source="spring.application.name"/>
     <springProperty scope="context" name="LOG_BASE_PATH" source="logging.file.path"/>
     <springProperty scope="context" name="BASE_LEVEL" source="logging.level.all"/>
@@ -221,8 +222,10 @@ logging:
     <property name="LEVEL" value="${BASE_LEVEL}"/>
     <property name="LOG_PATH" value="${LOG_BASE_PATH}/logs/${APP_NAME}"/>
     <property name="ARCHIVE_LOG_PATH" value="${LOG_PATH}/archive/%d{yyyy-MM-dd}"/>
+    <!--设置自定义pattern属性-->
     <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS}|%X{traceId}| %-5level %logger{80} - %msg%n"/>
 
+    <!--控制台输出日志-->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>${LOG_PATTERN}</pattern>
@@ -437,53 +440,6 @@ logging:
     </springProfile>
 
     <springProfile name="local">
-        <logger name="org.apache.ibatis" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="org.mybatis.spring" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="com.alibaba.druid" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="io.netty" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="org.springframework" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="cache-log" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-        <logger name="javax.cache" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="com.example.demo.dao" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="com.example.demo.manager" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="com.example.demo.service" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="com.example.demo.controller" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
-        <logger name="com.example.demo.aop" level="${LEVEL}" additivity="false">
-            <appender-ref ref="STDOUT"/>
-        </logger>
-
         <root level="${ROOT_LEVEL}">
             <appender-ref ref="STDOUT"/>
         </root>

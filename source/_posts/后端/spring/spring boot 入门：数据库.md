@@ -1,5 +1,5 @@
 ---
-title: spring boot（五）：数据库
+title: spring boot 入门：数据库
 category:
   - 后端
   - spring
@@ -9,34 +9,18 @@ tags:
   - spring boot
 keywords: spring boot
 abbrlink: 63b17f08
-date: 2019-03-17 04:00:00
-updated: 2019-03-17 04:00:00
+date: 2019-03-17 03:00:00
+updated: 2019-03-17 03:00:00
 ---
 
-Spring Boot 中整合 mybaits 有两种方式：基于注解或者基于 xml 配置。
+在 Spring Boot 中可使用的持久层访问框架 hibernate、mybatis，这里只介绍 mybatis。mybatis 使用有 xml 或注解两种方式。我们最常使用的是基于 xml 的方式，因此这里只介绍使用 xml 的方式。这里以 mysql 数据库为例，介绍一下如何使用 mybatis：
 
-## mybatis
+1. 添加 mysql-connector-java、mybatis-spring-boot-starter 依赖。
+2. application.yml 中添加 datasource、mybatis 配置。
+3. 编写实体类以及 mapper.java 文件，约定 service 层可调用的接口。
+4. 编写 mapper.xml 文件，约定数据库访问操作。
 
-### 添加依赖
-
-pom.xml 添加 mysql, mybatis 依赖。
-
-```xml
-<!-- mysql 连接依赖 -->
-<dependency>
-    <groupId>mysql</groupId>
-    <artifactId>mysql-connector-java</artifactId>
-    <scope>runtime</scope>
-</dependency>
-
-<dependency>
-    <groupId>org.mybatis.spring.boot</groupId>
-    <artifactId>mybatis-spring-boot-starter</artifactId>
-    <version>1.3.2</version>
-</dependency>
-```
-
-### 配置文件
+application.yml 配置文件可如下设置：
 
 ```yml
 spring:
@@ -52,98 +36,84 @@ mybatis:
   type-aliases-package: com.example.demo
 ```
 
-### mapper
-
-编写实体类。
-
-```java
-public class User {
-    private Integer id;
-    private String nickName;
-
-    public Integer getId(){
-        return id;
-    }
-
-    public void setId(Integer id){
-        this.id = id;
-    }
-
-    public String getNickName(){
-        return nickName;
-    }
-
-    public void setNickName(String nickName){
-        this.nickName = nickName;
-    }
-}
-```
-
-#### 基于注解
-
-```java
-// dao/mapper 层制作 mapper 文件
-@Mapper
-public interface MybatisUserAnnotationMapper {
-    @Select("SELECT id,nickname FROM demo.user WHERE id = #{id}")
-    User getUser(@Param("id") Integer id);
-
-    @Insert("INSERT INTO demo.user(nickname)")
-    void createUser(Map<String, Object> reqMap);
-
-    @Update("UPDATE demo.user SET nickname = #{nickName} WHERE id = #{id}")
-    void updateUser(@Param("id") Integer id, @Param("nickName") String nickName);
-
-    @Delete("DELETE FROM demo.user WHERE id = #{id}")
-    void delete(@Param("id") Integer id);
-}
-```
-
-#### 基于 xml 配置
-
-```java
-// dao/mapper 层制作 mapper 文件
-@Mapper
-public interface MybatisUserAnnotationMapper {
-    User getUser(@Param("id") Integer id);
-
-    void createUser(Map<String, Object> reqMap);
-
-    void updateUser(@Param("id") Integer id, @Param("nickName") String nickName);
-
-    void delete(@Param("id") Integer id);
-}
-```
+mapper.xml 文件典型如下：
 
 ```xml
 <!-- resources/mapper 中添加 mapper.xml -->
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="com.example.demo.dao.mapper.MybatisUserAnnotationMapper">
-    <select id="getUser" resultType="com.example.demo.dao.entity.User">
-        SELECT id,nickname FROM demo.user WHERE id = #{id}
+<!-- 指定 namespace -->
+<mapper namespace="com.example.demo.dao.mapper.UserMapper">
+    <!-- resultMap 用于设置返回值的类型和映射关系，并制定实体类 -->
+    <resultMap id="BaseResultMap" type="com.example.demo.dao.domain.User" >
+        <id column="id" property="id" jdbcType="BIGINT" />
+        <result column="name" property="name" jdbcType="VARCHAR" />
+    </resultMap>
+    <sql id="Base_Column_List" >
+        id, name
+    </sql>
+    <!-- id 与 Mapper 接口的方法名对应，同一个命名空间下不能重复，且不能带有 '.' 号 -->
+    <select id="getUser" resultMap="BaseResultMap" parameterType="java.lang.Long">
+        select 
+        <include refid="Base_Column_List" />
+        from user 
+        where id = #{id,jdbcType=BIGINT}
     </select>
 
-    <insert id="createUser" parameterType="java.util.Map">
-        INSERT INTO demo.user(nickname) VALUES (#{nickname})
+    <!-- useGeneratedKeys、keyProperty 为实体类注入 id 的值 -->
+    <insert id="createUser" parameterType="com.example.demo.dao.domain.User" useGeneratedKeys="true" keyProperty="id">
+        insert into user (
+            id, name
+        )
+        values (
+            #{id,jdbcType=BIGINT}, #{name,jdbcType=VARCHAR}
+        )
     </insert>
 
-    <update id="updateUser">
-      UPDATE demo.user SET nickname = #{nickName} WHERE id = #{id}
+    <update id="updateUser" parameterType="com.example.demo.dao.domain.User">
+        update user
+        set name = #{name,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=BIGINT}
     </update>
 
-
-    <delete id="delete">
-      DELETE FROM demo.user WHERE id = #{id}
+    <delete id="delete" parameterType="java.lang.Long">
+        delete from user where id = #{id,jdbcType=BIGINT}
     </delete>
 </mapper>
 ```
 
-## druid
+实体类以及 mapper 接口如下：
+
+```java
+@lombok
+public class User implements Serializable {
+    private static final long serialVersionUID = 1L; 
+
+    private Integer id;
+    private String name;
+}
+
+@Mapper
+public interface MybatisUserAnnotationMapper {
+    User getUser(@Param("id") Integer id);
+
+    void createUser(User user);
+
+    void updateUser(@Param("id") Integer id, @Param("name") String name);
+
+    void delete(@Param("id") Integer id);
+}
+```
+
+### mybatis-generator
+
+### 分页
+
+### druid
 
 druid 是阿里推出的数据库监控驱动。
 
-### 添加依赖
+#### 添加依赖
 
 ```xml
 <!-- druid 数据库监控驱动 -->
@@ -154,7 +124,7 @@ druid 是阿里推出的数据库监控驱动。
 </dependency>
 ```
 
-### 配置文件
+#### 配置文件
 
 ```yml
 spring:
@@ -181,7 +151,7 @@ spring:
     useGlobalDataSourceStat: true
 ```
 
-### 添加 DruidConfig 文件
+#### 添加 DruidConfig 文件
 
 ```java
 @Configuration
@@ -217,7 +187,9 @@ public class DruidConfig {
 
 localhost:9090/druid/index.html 登录访问监控数据。
 
-## 参考
+### lombok 及 Serializable
+
+### 参考
 
 [Homebrew介绍和使用](https://www.jianshu.com/p/de6f1d2d37bf)
 [Homebrew安装Mysql步骤及注意事项（配合Navicat使用）](https://blog.csdn.net/normalizer/article/details/83478834)

@@ -70,11 +70,14 @@ public class HelloController {
 
 pom.xml 如同 package.json，groupId、artifactId、version 用于锁定模块。最常见的是以下标签：
 
-* properties：全局可用的属性信息
-* dependency：生命依赖
-* exclusions：剔除包的依赖
+* packaging：设置打包机制，默认为 jar，父模块使用 pom
+* properties：全局可用的属性信息，一般用于管理依赖的版本号
+* dependencies、dependency：声明依赖。exclusions 剔除包的依赖；scope 依赖的作用范围
 * parent：父模块
 * modules：包含的子模块
+* build：构建配置，可指定 jdk 版本号
+
+更多内容可戳 [pom.xml 详解](https://zhuanlan.zhihu.com/p/100106971)。
 
 #### Maven
 
