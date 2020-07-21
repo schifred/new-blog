@@ -1,5 +1,5 @@
 ---
-title: spring boot（六）：redis 缓存服务
+title: spring boot 入门：redis 缓存服务
 category:
   - 后端
   - spring
