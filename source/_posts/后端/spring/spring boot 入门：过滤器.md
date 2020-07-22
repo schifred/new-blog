@@ -75,7 +75,7 @@ public class SessionFilter implements Filter {
 
     public boolean shouldLogin(String uri) {
         for (String excludeUrl : excludeUrls) {
-            if(excludeUrl.equals(uri)) {
+            if(uri.matches(excludeUrl)) {
                 return false;
             }
         }
