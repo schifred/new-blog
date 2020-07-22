@@ -158,6 +158,16 @@ mybatis:
     map-underscore-to-camel-case: true
 ```
 
+#### mybatis-pagehelper
+
+```yml
+pagehelper:
+  helperDialect: mysql # 设置数据库方言
+  reasonable: true # 分页合理化，即超过总条目时设为总条目数
+  supportMethodsArguments: true # 支持通过 Mapper 接口参数来传递分页参数
+  params: count=countSql # 设置参数映射
+```
+
 #### redis
 
 redis 一般用于提供分布式数据缓存服务，以使应用无状态。
@@ -191,7 +201,7 @@ spring:
 
 使用日志服务可先在 pom.xml 中添加 log4j-over-slf4j、jcl-over-slf4、jul-to-slf4j、logback-core 依赖。
 
-log4j-over-slf4j 通过代理将系统中所有 log4j 日志（含第三方库的）路由到 slf4j上。jcl-over-slf4 将 apache commons logging 路由到 slf4j上。jul-over-slf4 将 java.util.logging 路由到 slf4j上。
+log4j-over-slf4j 通过代理将系统中所有 log4j 日志（含第三方库的）路由到 slf4j上。jcl-over-slf4 将 apache commons logging 路由到 slf4j上。jul-over-slf4 将 java.util.logging 路由到 slf4j 上。
 
 更多内容可戳 [log4j-over-slf4j 工作原理详解](https://blog.csdn.net/john1337/article/details/76152906)、[logback 详解](https://blog.csdn.net/Sadlay/article/details/88732271)、[logback中文手册](http://www.logback.cn/)。
 
