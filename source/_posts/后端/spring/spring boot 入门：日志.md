@@ -60,6 +60,8 @@ class TestServiceImpl implements TestService {
 }
 ```
 
+对于 log4j2 日志，lombok 提供了 @Log4j2 注解。
+
 ### logback 配置
 
 以下配置用于说明 logback.xml 配置文件各标签的意义。完整配置可参考 [spring boot 入门：配置文件](/archives/6fd0dc6f/) 篇。更多可戳 [logback 官网](http://logback.qos.ch/demo.html)、[logback-demo](https://github.com/qos-ch/logback-demo)、[什么是 Appender](https://www.cnblogs.com/yw0219/p/9361040.html)、[如何正确配置logback](https://zhuanlan.zhihu.com/p/100713439)。
