@@ -228,6 +228,8 @@ public class UserController {
 
 使用 @ExceptionHandler 能捕获同一个类上抛出的错误，使用时需要指定错误类型。@ControllerAdvice 可用于捕获全局错误，这样可以打印日志等。
 
+在 web 应用的分层结构，service 一般抛出异常，controller 层用于捕获错误并作出处理。这时候，就可以使用 @ControllerAdvice、@ExceptionHandler 作统一处理。
+
 ```java
 // 处理异常
 @ControllerAdvice

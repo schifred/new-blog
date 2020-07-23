@@ -348,3 +348,14 @@ public class DruidConfig {
 lombok 提供的注解可用于简化实体类的编写，使用时须引入 lombok 依赖。在 IDEA 环境使用 lombok，还需要添加 lombok 插件，随后在 file - setting 面板启动 AnnocationProcessors。更多内容可戳 [Lombok的基本使用](https://www.jianshu.com/p/2543c71a8e45)。
 
 一般而言，实体类还需要继承 Serializable 接口，以便通过 ObjectOutputStream、ObjectInputStream 实现对象和字节流的相互转换。在 IDEA 环境中，还需要 setting - Inspections 面板上选中 Serializable class without 'serialVersionUID'，以便使用 alt + enter 快捷键生成 serialVersionUID。更多内容可戳 [Java对象为啥要实现Serializable接口？](https://developer.51cto.com/art/201905/596334.htm)、[IDEA给Serializable类加上自动的serialVersionUID](https://www.cnblogs.com/davidgu/p/9501776.html)。
+
+### 事务
+
+当一个请求中组织了多表操作行为，某个表操作失败也将使前续操作变得无效。这时候，就可以使用事务机制进行回滚。简单的，为方法、类添加 @Transactional 注解，就可以声明事务。需注意的是，@Transactional 注解只能使用 public 方法上，且当脚本抛出异常时，事务才生效。
+
+```java
+@Transactional
+public void doDbOperation() throws Exception {
+    // do db operation
+}
+```
