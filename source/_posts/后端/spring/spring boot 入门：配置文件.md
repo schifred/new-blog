@@ -449,10 +449,8 @@ logging:
         </root>
     </springProfile>
 
-    <springProfile name="local">
-        <root level="${ROOT_LEVEL}">
-            <appender-ref ref="STDOUT"/>
-        </root>
-    </springProfile>
+    <root level="${ROOT_LEVEL}">
+        <appender-ref ref="STDOUT"/>
+    </root>
 </configuration>
 ```
