@@ -13,28 +13,22 @@ date: 2019-03-17 02:20:00
 updated: 2019-03-17 02:20:00
 ---
 
-面向切面编程把横切关注点和业务逻辑分离，以便为横切关注点单独制作模块。面向切面编程适用于日志、安全和事务管理等场景。spring 中的 AOP 编程发挥了声明式编程的特点，即使用 
+面向切面编程把横切关注点和业务逻辑分离，以便为横切关注点单独制作模块。面向切面编程适用于日志、安全和事务管理等场景。spring 中的 AOP 编程发挥了声明式编程的特点，即使用 @Before、@After 等注解在某方法或某类方法的特定位置织入代码（织入的代码被称为建言）。
 
-* @PointCut：声明一个切点，即在哪个方法上织入代码。
+一般而言，spring 使用 execution 表达式定位方法，如 @Before("execution(public * com.example.demo.controller..*.*(..))") 直接定位到 controller 层中所有方法。除了为一类方法织入代码外，我们也可以通过自定义注解的方式间接定位需要织入代码的方法。
+
+* @Aspect：声明这是一个切面，约定需要织入的代码和织入的方式。 
 * @After, @AfterReturning, @AfterThrowing, @Before, @Around：声明在方法前或者后织入代码。
+* @PointCut：声明一个切点，即在哪个方法上织入代码。通常在间接定位形式中使用。
 
+本文仅简要地介绍 AOP 编程的方式。使用切面前须引入 spring-boot-starter-aop 依赖。
 
-因为在 @After 注解后可直接使用 execution 表达式锁定待封装函数的位置，同时 execution 表达式也能定位到多个待封装函数。特别的，当 execution 表达式定位 controller 时，就可以对特定或所有的 controller 进行拦截，而无需插入在 controller 插入定义为连接点（JoinPoint）的动作，controller 就作为连接点。想要实现这一过程，spring 容器在创建 controller 等定义了连接点的实例时，就必须知道哪些是 Aspect，且这些 Aspect 都需要注明为 Bean 以实例化，然后再使用这些实例去封装定义了连接点的实例。基于上述，AOP 有三种使用方式：
+### 直接定位
 
-1. execution 表达式直接定位 controller, service 的方法。
-2. execution 表达式定位辅助类，再通过辅助类将 controller, service 的方法声明为连接点。
-3. execution 表达式定位辅助类，在 controller, service 中显式调用辅助类中作为连接点的方法。
+1. 使用 @Aspect, @Component 注解声明一个切面。
+2. 切面中使用 @After, @AfterReturning, @AfterThrowing, @Before, @Around 约定建言。
 
-编码过程如下：
-
-1. 使用 @Aspect, @Bean 注解声明一个切面，即指定在哪个地方织入代码。
-2. 在切面中使用 @After, @AfterReturning, @AfterThrowing, @Before, @Around 注解定义一个建言（advice）。或者以 execution 表达式定位连接点的位置；或者在切面中 @PointCut 定义切点，并在 @After, @AfterReturning, @AfterThrowing, @Before, @Around 注解中使用该切点作为参数。
-3. controller, service 的方法作为连接点，无需额外编程；辅助类的方法作为连接点，或者在 controller, service 的方法上添加注解，或者在 controller, service 的方法中显示调用辅助类的方法。
-
-本节以 AOP 统一日志处理为例，说明其使用过程：
-
-1. 添加 spring-boot-starter-aop 依赖。
-2. 制作 Aspect 类。
+如以下代码就会在 controller 层所有方法执行前打印日志。
 
 ```java
 @Slf4j
@@ -42,11 +36,7 @@ updated: 2019-03-17 02:20:00
 @Component
 @Order(1)
 public class LogAspect {
-    //申明一个切点 里面是 execution 表达式
-    @Pointcut("@annotation(com.example.demo.aop.Log)")
-    private void controllerAspect(){}
-
-    //请求method前打印内容
+    // 请求method前打印内容
     @Before("execution(public * com.example.demo.controller..*.*(..))")
     public void methodBefore(JoinPoint joinPoint){
         ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -60,7 +50,36 @@ public class LogAspect {
         log.info("请求类方法参数:"+ Arrays.toString(joinPoint.getArgs()));
         log.info("===============请求内容===============");
     }
+}
+```
 
+### 间接定位
+
+1. 声明辅助类，通常是一个注解。
+2. 使用 @Aspect, @Component 注解声明一个切面。
+3. 切面中使用 @Pointcut 将辅助类定义为连接点。
+4. 切面中使用 @After, @AfterReturning, @AfterThrowing, @Before, @Around 针对辅助类约定建言。
+5. 在 controller, service 的方法中添加辅助类注解或显式调用辅助类的方法。
+
+如以下代码会在添加了 @Log 注解的方法上打印日志。
+
+```java
+// 辅助类
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+public @interface Log {
+    String log();
+}
+
+@Slf4j
+@Aspect
+@Component
+@Order(1)
+public class LogAspect {
+    //申明一个切点 里面是 execution 表达式
+    @Pointcut("@annotation(com.example.demo.aop.Log)")
+    private void controllerAspect(){}
 
     //在方法执行完结后打印返回内容
     @AfterReturning(returning = "o",pointcut = "controllerAspect()")
@@ -70,22 +89,7 @@ public class LogAspect {
         log.info("--------------返回内容----------------");
     }
 }
-```
 
-4. 声明辅助类。
-
-```java
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-public @interface Log {
-    String log();
-}
-```
-
-5. 被拦截的处理过程。
-
-```java
 @RestController
 @RequestMapping(value = "/aop")
 public class AopController {
@@ -96,5 +100,3 @@ public class AopController {
     }
 }
 ```
-
-![image](aop.png)

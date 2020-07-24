@@ -1,5 +1,5 @@
 ---
-title: spring boot（七）：定时任务
+title: spring boot 入门：定时任务
 category:
   - 后端
   - spring
@@ -16,7 +16,6 @@ updated: 2019-03-17 05:00:00
 启动类中添加 @EnableScheduling 注解开启定时任务。
 
 ```java
-@ComponentScan(basePackages = "com.example.demo.*")
 @SpringBootApplication
 @EnableScheduling
 public class DemoApplication {
