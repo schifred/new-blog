@@ -72,3 +72,26 @@ demo 戳 [这里](https://github.com/Alfred-sg/spring-boot-demo)，工程目录�
     └─test # 测试类存放路径
 ```
 
+[阿里巴巴Java开发手册](https://github.com/alibaba/p3c/blob/master/p3c-gitbook/%E5%B7%A5%E7%A8%8B%E7%BB%93%E6%9E%84/%E5%BA%94%E7%94%A8%E5%88%86%E5%B1%82.md)中约定的工程结构为：
+
+![image](alibabaLevel.png)
+
+* 开放接口层：可直接封装Service方法暴露成RPC接口；通过Web封装成http接口；进行网关安全控制、流量控制等。
+* 终端显示层：各个端的模板渲染并执行显示的层。当前主要是velocity渲染，JS渲染，JSP渲染，移动端展示等。
+* Web层：主要是对访问控制进行转发，各类基本参数校验，或者不复用的业务简单处理等。
+* Service层：相对具体的业务逻辑服务层。
+* Manager层：通用业务处理层，它有如下特征：
+1） 对第三方平台封装的层，预处理返回结果及转化异常信息；
+2） 对Service层通用能力的下沉，如缓存方案、中间件通用处理；
+3） 与DAO层交互，对多个DAO的组合复用。
+* DAO层：数据访问层，与底层MySQL、Oracle、Hbase等进行数据交互。
+* 外部接口或第三方平台：包括其它部门RPC开放接口，基础平台，其它公司的HTTP接口。
+
+以及分层领域模型：
+
+* DO（Data Object）：与数据库表结构一一对应，通过DAO层向上传输数据源对象。
+* DTO（Data Transfer Object）：数据传输对象，Service或Manager向外传输的对象。
+* BO（Business Object）：业务对象。由Service层输出的封装业务逻辑的对象。
+* AO（Application Object）：应用对象。在Web层与Service层之间抽象的复用对象模型，极为贴近展示层，复用度不高。
+* VO（View Object）：显示层对象，通常是Web向模板渲染引擎层传输的对象。
+* Query：数据查询对象，各层接收上层的查询请求。注意超过2个参数的查询封装，禁止使用Map类来传输。

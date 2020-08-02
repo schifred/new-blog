@@ -1,5 +1,5 @@
 ---
-title: spring boot 入门：附录（三） mysql
+title: spring boot 入门：附录（六） mysql
 category:
   - 后端
   - spring
@@ -9,8 +9,8 @@ tags:
   - spring boot
 keywords: spring boot
 abbrlink: '73386e0'
-date: 2019-03-17 13:00:00
-updated: 2019-03-17 13:00:00
+date: 2019-03-17 18:00:00
+updated: 2019-03-17 18:00:00
 ---
 
 ### 安装启动

@@ -1,5 +1,5 @@
 ---
-title: spring boot 入门：附录（一） Maven
+title: spring boot 入门：附录（五） Maven
 category:
   - 后端
   - spring
@@ -9,17 +9,23 @@ tags:
   - spring boot
 keywords: spring boot
 abbrlink: 692189cc
-date: 2019-03-17 12:00:00
-updated: 2019-03-17 12:00:00
+date: 2019-03-17 17:00:00
+updated: 2019-03-17 17:00:00
 ---
 
 ### pom.xml
 
-pom.xml 如同 package.json，groupId、artifactId、version 用于锁定模块。最常见的是以下标签：
+pom.xml 如同 package.json，groupId、artifactId、version 用于锁定模块。按[阿里巴巴Java开发手册](https://github.com/alibaba/p3c/blob/master/p3c-gitbook/%E5%B7%A5%E7%A8%8B%E7%BB%93%E6%9E%84/%E4%BA%8C%E6%96%B9%E5%BA%93%E4%BE%9D%E8%B5%96.md)中约定，GAV 遵从以下格式：
+
+* GroupID格式：com.{公司/BU }.业务线.[子业务线]，最多4级。
+* ArtifactID格式：产品线名-模块名。语义不重复不遗漏，先到中央仓库去查证一下。
+* Version格式：以二方库版本号为例，其命名方式为，主版本号.次版本号.修订号。主版本号意为产品方向改变，向下不兼容；次版本号保持相对兼容性，增加主要功能特性；修订号保持完全兼容性。起始版本号必须为：1.0.0。子模块的版本号须与父模块保持一致。
+
+最常见的是以下标签：
 
 * packaging：设置打包机制，默认为 jar，父模块使用 pom
 * properties：全局可用的属性信息，一般用于管理依赖的版本号
-* dependencies、dependency：声明依赖。exclusions 剔除包的依赖；scope 依赖的作用范围
+* dependencies、dependency：声明依赖。exclusions 剔除包的依赖；scope 依赖的作用范围；provided 引入，如同 peerDependency
 * parent：父模块
 * modules：包含的子模块
 * build：构建配置，可指定 jdk 版本号
@@ -47,3 +53,5 @@ A：原因是有奇怪的字符，须查验 pom.xml 文件
 * mvn deploy 将压缩文件上传私服
 * mvn idea:idea 将 maven java 或 web 项目转成 idea 工程
 * mvn idea:clean 清除 idea 配置，将 idea 工程转成 maven 项目
+* mvn dependency:tree 查看项目的依赖关系
+* mvn dependency:resolve-plugins 根据 pom.xml 下载或更新依赖
