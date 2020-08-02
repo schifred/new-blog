@@ -57,3 +57,10 @@ insert into user (user_name,password,mobile,email) values ('王五','123456','18
 ```sql
 alert table user add column age int comment '年龄';
 ```
+
+### 查询
+
+```sql
+select * from user where id = 1001;
+
+```

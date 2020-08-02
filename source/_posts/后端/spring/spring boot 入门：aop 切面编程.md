@@ -50,7 +50,16 @@ public class LogAspect {
         Map<String, String> paramsMap = new HashMap<>(paramNames.length);
         Object[] args = joinPoint.getArgs();
         for (int i = 0; i < paramNames.length; i++){
-            paramsMap.put(paramNames[i], JSON.toJSONString(args[i]));
+            Object arg = args[i];
+            if (arg instanceof HttpServletRequest){
+
+            // 响应被 JSON.toJSONString 处理后，图片校验码接口报错
+            // getOutputStream() has already been called for this response
+            } else if (arg instanceof HttpServletResponse) {
+
+            } else {
+                paramsMap.put(paramNames[i], JSON.toJSONString(arg));
+            }
         }
 
         log.info("===============请求内容===============");
