@@ -155,7 +155,6 @@ public class HttpClientUtil {
 
 @Configuration
 public class RestTemplateConfig {
-    @Bean(name = "httpsRestTemplate")
     public RestTemplate httpsRestTemplate(HttpComponentsClientHttpRequestFactory httpsFactory) {
         RestTemplate restTemplate = new RestTemplate(httpsFactory);
         restTemplate.setErrorHandler(
