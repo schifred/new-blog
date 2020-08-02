@@ -1,5 +1,5 @@
 ---
-title: spring boot 入门：redis 缓存服务
+title: spring boot 入门：使用 redis 缓存
 category:
   - 后端
   - spring

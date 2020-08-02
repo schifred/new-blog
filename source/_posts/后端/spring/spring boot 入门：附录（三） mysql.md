@@ -8,7 +8,7 @@ tags:
   - spring
   - spring boot
 keywords: spring boot
-abbrlink: b600fbee
+abbrlink: '73386e0'
 date: 2019-03-17 13:00:00
 updated: 2019-03-17 13:00:00
 ---
