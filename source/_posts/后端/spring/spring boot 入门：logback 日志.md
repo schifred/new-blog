@@ -1,5 +1,5 @@
 ---
-title: spring boot 入门：日志
+title: spring boot 入门：logback 日志
 category:
   - 后端
   - spring
@@ -16,6 +16,8 @@ updated: 2019-03-17 01:10:00
 [spring-boot-starter-web](https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-web) 整合了 [spring-boot-starter-logging](https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-logging)。在 maven 官网中，我们可以看到 spring-boot-starter-logging 整合了 [logback-classic](https://mvnrepository.com/artifact/ch.qos.logback/logback-classic)、[log4j-to-slf4j](https://mvnrepository.com/artifact/org.apache.logging.log4j/log4j-to-slf4j)、[jul-to-slf4j](https://mvnrepository.com/artifact/org.slf4j/jul-to-slf4j)。一般集成 logback 服务也需要 logback-classic、log4j-to-slf4j、jul-to-slf4j 三个包。
 
 log4j-over-slf4j 通过代理将系统中所有 log4j 日志（含第三方库的）路由到 slf4j上。jcl-over-slf4 将 apache commons logging 路由到 slf4j上。jul-over-slf4 将 java.util.logging 路由到 slf4j 上。更多内容可戳 [log4j-over-slf4j 工作原理详解](https://blog.csdn.net/john1337/article/details/76152906)、[logback 详解](https://blog.csdn.net/Sadlay/article/details/88732271)。
+
+需要注意的是，当添加 druid 数据源后，我们会看见在项目启动过程中存在 [Failed to bind properties under 'spring.datasource' to javax.sql.DataSource](https://blog.csdn.net/xingkongtianma01/article/details/81624313) 报错，此时添加 log4j-over-slf4j 即可。
 
 ### spring boot 默认日志
 
@@ -66,7 +68,22 @@ class TestServiceImpl implements TestService {
 
 以下配置用于说明 logback.xml 配置文件各标签的意义。完整配置可参考 [spring boot 入门：配置文件](/archives/6fd0dc6f/) 篇。更多可戳 [logback 官网](http://logback.qos.ch/demo.html)、[logback-demo](https://github.com/qos-ch/logback-demo)、[什么是 Appender](https://www.cnblogs.com/yw0219/p/9361040.html)、[如何正确配置logback](https://zhuanlan.zhihu.com/p/100713439)。
 
+```yml
+# application.yml：
+logging:
+  config: classpath:logback-config.xml
+  file:
+    path: /Users/alfred # mac 下根路径创建 data 目录需要权限
+  level:
+    all: debug
+    root: debug
+spring:
+  application:
+    name: demo # logback-config.xml 基于应用名创建日志文件夹
+```
+
 ```xml
+<!-- logback-config.xml -->
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration>
     <!-- 集成 spring boot 默认日志配置 -->

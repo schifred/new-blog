@@ -1,5 +1,5 @@
 ---
-title: spring boot 入门：过滤器
+title: spring boot 入门：filter 过滤器
 category:
   - 后端
   - spring
@@ -32,14 +32,12 @@ public class FilterConfig {
     }
 }
 
+@Slf4j
 @Component
 public class SessionFilter implements Filter {
-    private static final Logger log = LoggerFactory.getLogger(SessionFilter.class);
-
     private static final String session_user_key = "user_key";
-    private static final String api_should_login = "/api";
 
-    String[] excludeUrls = new String[]{"/user/login","/user/register","/user/getUserInfo"};
+    String[] includeUrls = new String[]{"/api/*"};// 约定 api 前缀请求须登录
 
     @Override
     public void init(FilterConfig filterConfig) throws ServletException { }
@@ -54,18 +52,25 @@ public class SessionFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) servletResponse;
         HttpSession session = request.getSession(false);// 获取当前请求的 session
         String uri = request.getRequestURI();// 获取访问路径
-        String servletPath = request.getServletPath();// 获取访问路径，不带域名协议
 
+        log.info("uri: {}", uri);
         boolean needLogin = shouldLogin(uri);
+        log.info("need login: {}", needLogin);
         if (!needLogin) {
             chain.doFilter(request, response);
         } else {
             if(null != session && null != session.getAttribute(session_user_key)){
                 chain.doFilter(request, response);
             }else{
-                if (servletPath.indexOf(api_should_login) == 0){
-                    Result result = ResultUtil.error(403, "should login");
-                    response.getWriter().write(JSON.toJSONString(result));
+                String ajaxHeader = request.getHeader("X-Requested-With");
+                if ("XMLHttpRequest".equals(ajaxHeader)){
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    Result result = ResultUtil.error(401, "please login");
+                    PrintWriter writer = response.getWriter();
+                    writer.write(JSON.toJSONString(result));
+                    writer.flush();
+                    writer.close();
+                    return;
                 } else {
                     response.sendRedirect("/login");
                 }
@@ -74,8 +79,8 @@ public class SessionFilter implements Filter {
     }
 
     public boolean shouldLogin(String uri) {
-        for (String excludeUrl : excludeUrls) {
-            if(uri.matches(excludeUrl)) {
+        for (String includeUrl : includeUrls) {
+            if(!uri.matches(includeUrl)) {
                 return false;
             }
         }

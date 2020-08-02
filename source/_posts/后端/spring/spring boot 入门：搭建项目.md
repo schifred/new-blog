@@ -66,36 +66,6 @@ public class HelloController {
 
 更多内容可戳 [使用 idea 创建 springboot 多模块项目](https://blog.csdn.net/lhw_csd/article/details/82183008)。
 
-#### pom.xml
-
-pom.xml 如同 package.json，groupId、artifactId、version 用于锁定模块。最常见的是以下标签：
-
-* packaging：设置打包机制，默认为 jar，父模块使用 pom
-* properties：全局可用的属性信息，一般用于管理依赖的版本号
-* dependencies、dependency：声明依赖。exclusions 剔除包的依赖；scope 依赖的作用范围
-* parent：父模块
-* modules：包含的子模块
-* build：构建配置，可指定 jdk 版本号
-
-更多内容可戳 [pom.xml 详解](https://zhuanlan.zhihu.com/p/100106971)。
-
-#### Maven
-
-上文已说明，Maven 如同前端工程中的 npm。与 npm 一样，直接从 Maven 官方下载仓库是比较慢的，这时可以通过改写 Maven 的 settings.xml 配置文件，将仓库指定为阿里云 Maven 仓库。改写配置文件的详细方式可以戳 [这里](https://www.cnblogs.com/sword-successful/p/6408281.html)。下载依赖时，首先会查找本地资源，然后查找私服镜像，最后 Maven 官方仓库。
-
-同样的，npm 官网可以查询 npm 包详情，我们也可以在 [Maven 官网](https://mvnrepository.com/)或 [阿里 Maven](https://maven.aliyun.com/mvn/search) 查看依赖的详细信息。
-
-在 IDEA 工具面板中，Maven 可执行以下操作（也可以通过命令行界面操作）：
-
-* mvn compile –src/main/java 编译生成 class（target 目录下）
-* mvn test –src/test/java 编译
-* mvn clean 删除 target 目录
-* mvn package　生成压缩文件，java 项目 jar 包，web 项目 war 包（target 目录下）
-* mvn install　将压缩文件（jar 或 war 包）上传到本地仓库
-* mvn deploy 将压缩文件上传私服
-* mvn idea:idea 将 maven java 或 web 项目转成 idea 工程
-* mvn idea:clean 清除 idea 配置，将 idea 工程转成 maven 项目
-
 #### 使用 jetty
 
 spring boot 默认使用 tomcat。如果想禁用，使用其他的 servlet 容器如 jetty，可修改 pom.xml，如下：
@@ -138,35 +108,3 @@ spring boot 以约定大于配置的方式简化了 spring 工程的配置，其
 @Configuration 用于定义配置类，可以被 AnnotationConfigApplicationContext 或 AnnotationConfigWebApplicationContext 类扫描到，用于构建配置类内部的 Bean，以初始化 Spring 容器。
 
 更多内容可戳 [@EnableAutoConfiguration 注解原理](https://www.cnblogs.com/whx7762/p/7832985.html)、 [@Configuration 详解](https://blog.csdn.net/koflance/article/details/59304090)。
-
-#### IDEA 快捷键
-
-* 双击 shift 当前项目的所有文件夹中查找内容
-* ctrl + f 当前文件查找特定内容
-* ctrl + shift + f 查找特定内容
-* ctrl + n 查找类
-* ctrl + shift + n 查找文件
-* ctrl + r 当前文件替换内容
-* ctrl + shift + r 当前项目替换内容
-* shift + F6 重命名类等
-* alt + insert 类中使用自动生成方法，项目中使用创建类
-* alt + enter 消除黄色警告，自动优化代码
-* ctrl + alt + l 代码格式化
-
-更多内容可戳 [IDEA 快捷键](https://blog.csdn.net/xkzju2010/article/details/69487723)。
-
-#### 常见问题
-
-1. 项目目录结构折叠问题
-    点击 Project 一行上齿轮图标，取消 Hide Empty Middle Packages 选中态
-
-2. 使用 IDEA 启动项目时，报 Java 1.5 版本过等错误
-    检查 Project Structure - Project | Modules 指定的当前项目 jdk 版本、以及 Setting - Java Compiler 指定的 Java 版本是否正确。
-
-3. 启动时报端口号被占用
-    查看并杀死占用端口号的进程 
-    netstat -ano |findstr 18080
-    taskkill /f /t /im 23384
-
-4. 指定 profile 方式启动
-    VM OPTIONS 添加 -Dspring.profiles.active=local

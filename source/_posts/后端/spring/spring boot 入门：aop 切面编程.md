@@ -1,5 +1,5 @@
 ---
-title: spring boot 入门：切面
+title: spring boot 入门：aop 切面编程
 category:
   - 后端
   - spring
@@ -36,19 +36,36 @@ updated: 2019-03-17 02:20:00
 @Component
 @Order(1)
 public class LogAspect {
-    // 请求method前打印内容
+    //申明一个切点 里面是 execution表达式
+    @Pointcut("@annotation(com.example.demo.aop.Log)")
+    private void controllerAspect(){}
+
     @Before("execution(public * com.example.demo.controller..*.*(..))")
     public void methodBefore(JoinPoint joinPoint){
         ServletRequestAttributes requestAttributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         HttpServletRequest request = requestAttributes.getRequest();
+        MethodSignature signature = (MethodSignature)joinPoint.getSignature();
 
-        //打印请求内容
+        String[] paramNames = signature.getParameterNames();
+        Map<String, String> paramsMap = new HashMap<>(paramNames.length);
+        Object[] args = joinPoint.getArgs();
+        for (int i = 0; i < paramNames.length; i++){
+            paramsMap.put(paramNames[i], JSON.toJSONString(args[i]));
+        }
+
         log.info("===============请求内容===============");
-        log.info("请求地址:"+request.getRequestURL().toString());
-        log.info("请求方式:"+request.getMethod());
-        log.info("请求类方法:"+joinPoint.getSignature());
-        log.info("请求类方法参数:"+ Arrays.toString(joinPoint.getArgs()));
+        log.info("请求地址: {}", request.getRequestURL().toString());
+        log.info("请求方式: {}", request.getMethod());
+        log.info("请求类方法: {}", signature);
+        log.info("请求类方法参数: {}", paramsMap);
         log.info("===============请求内容===============");
+    }
+
+    @AfterReturning("execution(public * com.example.demo.controller..*.*(..))")
+    public void methodAfterReturing(Object o){
+        log.info("===============响应内容===============");
+        log.info("响应内容: ", JSON.toJSONString(o));
+        log.info("===============响应内容===============");
     }
 }
 ```

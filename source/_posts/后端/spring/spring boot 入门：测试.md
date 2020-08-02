@@ -9,8 +9,8 @@ tags:
   - spring boot
 keywords: spring boot
 abbrlink: b600fbee
-date: 2019-11-11 06:00:00
-updated: 2019-11-11 06:00:00
+date: 2019-03-17 06:00:00
+updated: 2019-03-17 06:00:00
 ---
 
 Spring Boot 项目可以借助 JUnit 作单元测试、Spring Test 作集成测试。编写测试用例前需要添加 spring-boot-starter-test 依赖，这样会加载 JUnit4 依赖。以下是编写测试类时的常用注解（IDEA 可在选中待测试类后，使用 ⇧⌘T(MAC) 或者 Ctrl+Shift+T(Window) 快捷键创建测试类，或者点击 Navigate - Test 面板创建测试类）：
@@ -26,7 +26,7 @@ JUnit 为保证每个测试方法都是单元测试，相互独立，互不影�
 * @Before、@After：在每个 @Test 执行前后都会被执行一次
 * @Test：标记测试方法单元，被 @Ignore 标记的测试方法不会被执行
 
-此外，JUnit 提供了许多断言方法。
+此外，JUnit 提供了许多断言方法。这些方法失败时会报错，成功时不会打印日志。
 
 * assertTrue(msg, actual)：校验是否为 true
 * assertFalse(msg, actual)：校验是否为 false
@@ -48,9 +48,13 @@ MockMvc 实现了对 Http 请求的模拟，能够直接使用网络请求的形
 可以在测试类上添加 @WebMvcTest 注解，这样只有部分 bean 会被扫描到，分别是 @Controller、@ControllerAdvice、@JsonComponent、Filter、WebMvcConfigurer、HandlerMethodArgumentResolver。其他常规的 @Component（包括 @Service、@Repository 等）不会被加载到 Spring 测试环境上下文中。
 
 ```java
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+
 @RunWith(SpringRunner.class)
-@SpringBootTest
-// @WebMvcTest(DemoController.class)
+@SpringBootTest(classes = {DemoApplication.class})
+@WebAppConfiguration
 public class DemoControllerTest {
     @Autowired 
     WebApplicationContext wac;// 注入 WebApplicationContext
@@ -72,32 +76,32 @@ public class DemoControllerTest {
     // 页面测试
     @Test
     public void testPage() throws Exception {
-      mvc.perform(get("/index"))
-        .andExpect(status().isOk())
-        .andExpect(view().name("index"))// 预期 view 的名称为 index
-        .andExpect(forwardedUrl("/index"))// 预期页面重定向到 index
-        .andExpect(model().attribute("msg", "test"));
+      mvc.perform(MockMvcRequestBuilders.get("/index"))
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.view().name("index"))// 预期 view 的名称为 index
+        .andExpect(MockMvcResultMatchers.forwardedUrl("/index"))// 预期页面重定向到 index
+        .andExpect(MockMvcResultMatchers.model().attribute("msg", "test"));
     }
 
     @Test
     public void testJson() throws Exception {
-      mockMvc.perform(get("/json"))
-        .andExpect(status().isOk())
-        .andExpect(content().contentType("application/json"))// 期望返回 json
-        .andExpect(content().string("{test: 123}"))// 期望返回值
+      mockMvc.perform(MockMvcRequestBuilders.get("/json"))
+        .andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.content().contentType("application/json"))// 期望返回 json
+        .andExpect(MockMvcResultMatchers.content().string("{test: 123}"))// 期望返回值
         .session(session)
-        .andDo(print());// 打印数据
+        .andDo(MockMvcResultHandlers.print());// 打印数据
     }
 
     @Test
     @Transactional// 添加注解以便回滚，数据将不会入库
     public void testPost() throws Exception {
-      mockMvc.perform(post("/update")
+      mockMvc.perform(MockMvcRequestBuilders.post("/update")
           .accept(MediaType.APPLICATION_JSON_UTF8)// org.springframework.http.MediaType
           .content("{test: 123}")
           .session(session)
-        ).andExpect(status().isOk())
-        .andExpect(status().isOk())
+        ).andExpect(MockMvcResultMatchers.status().isOk())
+        .andExpect(MockMvcResultMatchers.status().isOk())
     }
 }
 ```
@@ -106,7 +110,7 @@ public class DemoControllerTest {
 
 ```java
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = {DemoApplication.class})
 public class DemoServiceUnitTest {
     @Autowired
     private DemoService demoService;
@@ -141,3 +145,27 @@ public class UserServiceTest {
   }
 }
 ```
+
+### 常见问题
+
+Q：cannot resolve method get/status
+A：手动导入依赖，并编码
+```java
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+// MockMvcRequestBuilders.get
+// MockMvcResultMatchers.status
+// MockMvcResultMatchers.content
+// MockMvcResultHandlers.print
+```
+
+Q：Failed to load ApplicationContext 报错
+A：测试类文件中添加 @ContextConfiguration(locations= {"classpath*:application.yml","classpath*:logback_config.xml"}) 注解
+
+Q：org.xml.sax.SAXParseException; lineNumber: 1; columnNumber: 1; 前言中不允许有内容
+A：application.yml 文件 logback-config.xml 配置不正确；或需移除 @ContextConfiguration(locations= {"classpath*:application.yml", "classpath*:logback-config.xml"}) 注解
+
+Q：测试类自动装配 Controller 失败
+A：测试类须添加 @SpringBootTest(classes = {DemoApplication.class}) 注解，声明启动类，详见 SpringBoot中Junit测试注入Bean失败的解决方法

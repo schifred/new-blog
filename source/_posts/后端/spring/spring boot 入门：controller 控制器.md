@@ -1,5 +1,5 @@
 ---
-title: spring boot 入门：控制器
+title: spring boot 入门：controller 控制器
 category:
   - 后端
   - spring
@@ -54,11 +54,9 @@ updated: 2019-03-17 02:00:00
 
 #### ajax 请求
 
-我们一般需要创建如 ResultUtils 工具类用于生成成功或失败的响应内容，代码如下：
+我们一般需要创建如 ResultUtil 工具类用于生成成功或失败的响应内容，代码如下：
 
 ```java
-import com.alibaba.fastjson.JSON;
-
 public class Result<T> {
     private Integer code;
     private String msg;
@@ -81,7 +79,7 @@ public class Result<T> {
         this.msg = msg;
     }
 
-    public Integer getSuccess(){
+    public Boolean getSuccess(){
         return success;
     }
 
@@ -98,51 +96,25 @@ public class Result<T> {
     }
 }
 
-public class ResultUtils {
-    public Result success(Object object){
-        Result result = new Result();
-        result.setCode(200);
-        result.setMsg("success");
-        result.setSuccess(true);
-        result.setData(object);
-        return result;
+public class ResultUtil {
+    public static Result success(){
+        return success(null);
     }
 
-    public Result success(Object obj){
-        if (obj instanceof String){
-            return success(null, (String) obj);
-        }else{
-            return success(obj, "success");
-        }
+    public static Result success(Object obj){
+        return success(obj, "success");
     }
 
-    public Result success(Object obj, String msg){
+    public static Result success(Object obj, String msg){
         Result result = new Result();
         result.setCode(200);
         result.setMsg(msg);
         result.setSuccess(true);
-        result.setData(object);
+        result.setData(obj);
         return result;
     }
 
-    public Result error(Integer code){
-        Result result = new Result();
-        result.setCode(code);
-        result.setMsg("error");
-        result.setSuccess(false);
-        result.setData(null);
-        return result;
-    }
-
-    public Result error(Object obj){
-        if (obj instanceof String){
-            return error(null, (String) obj);
-        }else{
-            return error(obj, "error");
-        }
-    }
-
-    public Result error(Integer code, String msg){
+    public static Result error(Integer code, String msg){
         Result result = new Result();
         result.setCode(code);
         result.setMsg(msg);
@@ -153,7 +125,7 @@ public class ResultUtils {
 }
 ```
 
-基于 ResultUtils，我们可编写如下 controller：
+基于 ResultUtil，我们可编写如下 controller：
 
 ```java
 // controller
@@ -162,116 +134,27 @@ public class ResultUtils {
 public class RequestController {
     @RequestMapping(value = "/pathVariableTest/{id}")
     public Result pathVariableTest(@PathVariable int id){
-        return ResultUtils.success();
+        return ResultUtil.success(id);
     }
 
     @RequestMapping(value = "/requestParamTest")
     public Result requestParamTest(@RequestParam(value = "id") int id){
-        return ResultUtils.success();
+        return ResultUtil.success(id);
     }
 
     @RequestMapping(value = "/requestBodyTest", method = RequestMethod.POST)
     public Result requestBodyTest(@RequestBody User user){
-        return ResultUtils.success(user);
+        return ResultUtil.success(user);
     }
 
     @RequestMapping(value = "/modelAttributeTest", method = RequestMethod.POST)
     public Result modelAttributeTest(@ModelAttribute User user){
-        return ResultUtils.success(user);
+        return ResultUtil.success(user);
     }
 
     @RequestMapping(value = "httpServletRequestTest", method = RequestMethod.POST)
     public Result httpServletRequestTest(HttpServletRequest request){
-        return ResultUtils.success(request);
+        return ResultUtil.success(request);
     }
 }
 ```
-
-#### 参数校验
-
-参数校验可直接使用 StringUtils 等工具类判断并返回错误响应，也可以借助 hibernate-validator。以下是使用示例：
-
-1. 添加 hibernate-validator 依赖
-2. 实体类添加 @NotNull 等注解，设定校验规则
-3. 在控制器方法中使用 @Valid、BindingResult 标识参数
-
-```java
-public class Car {
-  @NotNull
-  private String manufacturer;
-
-  @NotNull
-  @Size(min = 2, max = 14)
-  private String licensePlate;
-
-  @Min(2)
-  private int seatCount;
-}
-
-@RestController
-public class UserController {
-  @GetMapping("/getCar")
-  @ResponseBody
-  public Result<Car> insertUser(@Valid Car car, BindingResult result) {
-    if (result.hasErrors()) {
-      ResultUtils.error(
-        ResponseConstants.PARAM_ERROR.getCode(), 
-        result.getAllErrors()[0].getDefaultMessage()
-      );
-    }
-    return ResultUtils.success(car);
-  }
-}
-```
-
-#### 错误捕获
-
-使用 @ExceptionHandler 能捕获同一个类上抛出的错误，使用时需要指定错误类型。@ControllerAdvice 可用于捕获全局错误，这样可以打印日志等。
-
-在 web 应用的分层结构，service 一般抛出异常，controller 层用于捕获错误并作出处理。这时候，就可以使用 @ControllerAdvice、@ExceptionHandler 作统一处理。
-
-```java
-// 处理异常
-@ControllerAdvice
-public class HandleForException {
-    @ExceptionHandler({ArithmeticException.class})// 针对指定错误进行处理
-    public String testArithmeticException(Exception e){
-        System.out.println("ArithmeticException:"+e);
-        return "error";
-    }
-}
-```
-
-#### 页面渲染
-
-Spring Boot 支持使用 FreeMarker, Groovy, Thymeleaf, Velocity, Mustache 作为模板引擎，推荐使用 Thymeleaf，因为其提供了完美的 Spring MVC 支持。
-
-1. 在 pom.xml 文件添加 spring-boot-starter-thymeleaf 依赖
-2. 制作 html 页面
-3. 制作 controller 直接返回页面模板在 resources/templates 中的位置
-4. Model 可用于页面注入动态数据
-
-```java
-@Controller
-public class ThymeleafController {
-    @RequestMapping("/")
-    public String index(Model model){
-        model.addAttribute("timestamp", new Date().getTime());
-        return "index";
-    }
-}
-```
-
-#### 文件上传
-
-使用 @RequestParam、MultipartFile 可接收请求中的文件对象。
-
-```java
-@PostMapping("/uploadFile")
-public Result<FileDTO> uploadFile(@RequestParam("file") MultipartFile file){
-  FileDTO fileDTO = storageService.store(file);// 实现存储 service
-  return Result.createSuccessResult(fileDTO);
-}
-```
-
-更多内容可戳 [Uploading Files 文档](https://spring.io/guides/gs/uploading-files/)。

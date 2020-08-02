@@ -1,5 +1,5 @@
 ---
-title: spring boot 入门：配置文件
+title: spring boot 入门：application.yml 配置文件
 category:
   - 后端
   - spring
@@ -55,7 +55,7 @@ public class AlfredController {
 
 ### 区分环境
 
-针对不同的环境，Spring 支持创建 application-dev.yml, application-test.yml, application-prod.yml 文件，并在 application.yml 指定当前所采用的配置文件，这被称为 Profile 配置。
+针对不同的环境，Spring 支持创建 application-dev.yml, application-test.yml, application-prod.yml 文件，并在 application.yml 指定当前所采用的配置文件，这被称为 Profile 配置。在 IDEA 启动时，启动环境也可以通过将 VM options 配置项设为 -Dspring.profiles.active=dev。
 
 ```yml
 // application.yml
@@ -97,7 +97,7 @@ spring:
 spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
-    driver-class-name: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/test?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai # useSSL=true 解决JDBC版本与MySQL版本不兼容问题
     username: odic
     password: Gw32_iuX
@@ -206,13 +206,17 @@ log4j-over-slf4j 通过代理将系统中所有 log4j 日志（含第三方库�
 更多内容可戳 [log4j-over-slf4j 工作原理详解](https://blog.csdn.net/john1337/article/details/76152906)、[logback 详解](https://blog.csdn.net/Sadlay/article/details/88732271)、[logback中文手册](http://www.logback.cn/)。
 
 ```yml
+# application.yml：
 logging:
   config: classpath:logback-config.xml
   file:
-    path: /data
+    path: /Users/alfred # mac 下根路径创建 data 目录需要权限
   level:
     all: debug
     root: debug
+spring:
+  application:
+    name: demo # logback-config.xml 基于应用名创建日志文件夹
 ```
 
 除了 application.yml 外，还需要配置 logback-config.xml。

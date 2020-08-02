@@ -9,8 +9,8 @@ tags:
   - spring boot
 keywords: spring boot
 abbrlink: e219e00a
-date: 2019-03-17 02:50:00
-updated: 2019-03-17 02:50:00
+date: 2019-03-17 05:50:00
+updated: 2019-03-17 05:50:00
 ---
 
 [redis](http://www.redis.cn/) 可以作为消息中间件、缓存服务器，在集群、分布式环境中有广泛使用，以便于解决共享数据的问题，使单机保持无状态（比如登录状态）。这里只介绍怎样在 Spring Boot 项目中使用 redis 服务。首先需要添加 spring-boot-starter-data-redis、jedis 依赖。[jedis](https://github.com/xetorthio/jedis) 是 redis 官方推荐的 java 连接开发工具。与数据库访问操作中先有 jdbc、后有 mybatis 一样，jedis 也需要配置连接池。本文只简单地介绍如何用 Spring Boot 使用 redis 服务。

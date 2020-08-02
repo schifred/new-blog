@@ -1,5 +1,5 @@
 ---
-title: spring boot 入门：数据库
+title: spring boot 入门：mybatis 访问数据库
 category:
   - 后端
   - spring
@@ -171,7 +171,7 @@ generatorConfig.xml 文件配置如下，声明数据库连接且需要访问的
 
         <!-- jdbc链接信息 -->
         <jdbcConnection driverClass="com.mysql.jdbc.Driver"
-                        connectionURL="jdbc:mysql://127.0.0.1:3306/test?useUnicode=true&amp;characterEncoding=UTF8"
+                        connectionURL="jdbc:mysql://127.0.0.1:3306/demo?useUnicode=true&amp;characterEncoding=UTF8"
                         userId="root" password="123456">
         </jdbcConnection>
 
@@ -180,7 +180,7 @@ generatorConfig.xml 文件配置如下，声明数据库连接且需要访问的
         </javaTypeResolver>
 
         <!-- 生成PO类的位置 -->
-        <javaModelGenerator targetPackage="com.example.generate_mapper.dal.domain"
+        <javaModelGenerator targetPackage="com.example.demo.dal.entity"
                             targetProject="src/main/java">
             <property name="enableSubPackages" value="false"/>
             <property name="trimStrings" value="true"/>
@@ -194,13 +194,13 @@ generatorConfig.xml 文件配置如下，声明数据库连接且需要访问的
 
         <!-- mapper接口生成的位置 -->
         <javaClientGenerator type="XMLMAPPER"
-                             targetPackage="com.example.generate_mapper.dal.mapper"
+                             targetPackage="com.example.demo.dal.mapper"
                              targetProject="src/main/java">
             <property name="enableSubPackages" value="false"/>
         </javaClientGenerator>
 
         <!-- 指定要生成的表 -->
-        <table tableName="test" domainObjectName="Test"
+        <table tableName="user" domainObjectName="User"
                enableCountByExample="false"
                enableDeleteByExample="false"
                enableSelectByExample="false"
@@ -359,3 +359,8 @@ public void doDbOperation() throws Exception {
     // do db operation
 }
 ```
+
+### 常见问题
+
+Q：Invalid bound statement (not found)  报错
+A：mybatis 在 application.yml 中为顶层属性，详见 [springboot整合mybatis错误 Invalid bound statement (not found): 解决办法](https://blog.csdn.net/qq_41466437/article/details/107062640)
