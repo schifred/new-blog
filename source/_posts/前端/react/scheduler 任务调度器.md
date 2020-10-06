@@ -67,7 +67,7 @@ SchedulerHostConfig 模块包含一些预留方法，分别由不同环境提供
 * startTime：任务的假定执行时间，默认为当前时间。实际是添加到 taskQueue 队列中的事件。通过 delay 选项设置延时，该任务会先添加到 timerQueue 队列中，delay 时间一过，再移入 taskQueue 队列中
 * expirationTime：到期时间，即 options.timeout 或  timeout + startTime（timeout 通过 priorityLevel 计算）。若未设置 options.timeout、priorityLevel，timeout 默认使用 NORMAL_PRIORITY_TIMEOUT = 5000，即 taskQueue、timerQueue 中的任务都有 expirationTime
 
-对于 taskQueue 队列中的任务，sortIndex 的值为 expirationTime，即根据 expirationTime 协调任务的执行顺序，这也是 expirationTime 与优先级 priorityLevel 密切相关的原因。对于 timerQueue 队列中的任务，sortIndex 的值为 startTime，即根据 startTime 协调任务挪移到 taskQueue 的顺序。当任务从 timerQueue 队列挪动到 taskQueue 队列时，该任务的 sortIndex 仍旧会被设置为 expirationTime，即以 expirationTime 协调任务的执行顺序。因此，taskQueue 可视为即将执行的任务队列；timerQueue 可视为排队等待执行的任务队列。同时，timerQueue 中的任务会延时添加到 taskQueue 并执行，因此也可视为异步任务队列；taskQueue 可视为同步任务队列。
+对于 taskQueue 队列中的任务，sortIndex 的值为 expirationTime，即根据 expirationTime 协调任务的执行顺序，这也是 expirationTime 与优先级 priorityLevel 密切相关的原因。对于 timerQueue 队列中的任务，sortIndex 的值为 startTime，即根据 startTime 协调任务挪移到 taskQueue 的顺序。当任务从 timerQueue 队列挪动到 taskQueue 队列时，该任务的 sortIndex 仍旧会被设置为 expirationTime，即以 expirationTime 协调任务的执行顺序。因此，taskQueue 可视为即将执行的任务队列；timerQueue 可视为排队等待执行的任务队列。同时，timerQueue 中的任务会延时添加到 taskQueue 并执行，因此也可视为延时任务队列；taskQueue 可视为即时任务队列。
 
 expirationTime 设置为 options.timeout 或由 priorityLevel 计算获得。即如 timeout 选项的语意，它指的是任务的预期执行时长。就像最短作业优先调度算法，对于同一时间待调度的任务，较低 expirationTime 的任务在 taskQueue 位置较前，最先得到调度。为了避免低优先级的任务得不到执行（即饥饿），计算 expirationTime 时会结合 currentTime，即后添加的高优先级任务未必会比先添加的低优先级任务拥有更小的 expirationTime。
 结合 SchedulerHostConfig 模块限制的任务可执行时长 deadline，若 expirationTime 小于 deadline，任务就会有足够的时间执行；若大于，渲染线程就会长期得不到工作，因此在任务执行完成后，就会将工作线程交还给渲染线程。优先级越高，expirationTime 越小，连续不跌的多个任务反会长期占用工作线程，任务的内容与渲染线程也越紧密；反之亦然。如 ui 渲染型任务需要快速地反应成视图变更，expirationTime 相应也小；状态计算型任务的 expirationTime 相应也大。多个 ui 渲染型任务也需要连贯一致地执行完成，不能被挂起，否则渲染内容就会与预期不一致；多个状态计算型任务却可以被挂起，由内存记录最新的状态，等待渲染线程工作完成后，再接着这个状态执行计算任务。
@@ -76,22 +76,22 @@ expirationTime 设置为 options.timeout 或由 priorityLevel 计算获得。即
 
 看完 scheduler 对任务的抽象，我们会问，任务分别是什么时候添加到 taskQueue、timerQueue 队列中的呢？任务又是怎么执行的呢？
 
-[unstable_scheduleCallback(priorityLevel, callback, options)](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L295) 函数给了我们答案。首先通过选项 options.delay 可以区分同步任务和异步任务，这样就可以将同步任务添加到 taskQueue 中，将异步任务添加到 timerQueue 中。简单地看，同步任务可使用对接宿主环境的 requestHostCallback 函数执行，异步任务可使用 requestHostTimeout 函数执行。
+[unstable_scheduleCallback(priorityLevel, callback, options)](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L295) 函数给了我们答案。首先通过选项 options.delay 可以区分即时任务和延时任务，这样就可以将即时任务添加到 taskQueue 中，将延时任务添加到 timerQueue 中。简单地看，即时任务可使用对接宿主环境的 requestHostCallback 函数执行，延时任务可使用 requestHostTimeout 函数执行。
 
-问题是，当一个同步任务在执行期间，我们又通过 unstable_scheduleCallback 创建了另一个同步任务，这时需要怎么处理呢？上文已有描述，浏览器环境默认的 requestHostCallback 是抢占式的，即后续的同步任务会踢掉先前的同步任务，这不符合我们的需求。我们的需求是非抢占式的，后续的任务需等待先前的任务执行完成，即一个同步任务执行完成后，再从 taskQueue 队列中获取下一个任务。在这方面，scheduler 使用 [workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 函数循环处理 taskQueue 队列。我们可以看到，在循环处理流程中，如果任务长期占用工作线程，以致于渲染线程得不到工作（即 currentTime 已经过了 deadline 时间点，还没过 expirationTime 时间点），后续的任务就会被挂起，交回渲染线程进行处理，同时告诉 MessageChannel 还有未执行的任务。
+问题是，当一个即时任务在执行期间，我们又通过 unstable_scheduleCallback 创建了另一个即时任务，这时需要怎么处理呢？上文已有描述，浏览器环境默认的 requestHostCallback 是抢占式的，即后续的即时任务会踢掉先前的即时任务，这不符合我们的需求。我们的需求是非抢占式的，后续的任务需等待先前的任务执行完成，即一个即时任务执行完成后，再从 taskQueue 队列中获取下一个任务。在这方面，scheduler 使用 [workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 函数循环处理 taskQueue 队列。我们可以看到，在循环处理流程中，如果任务长期占用工作线程，以致于渲染线程得不到工作（即 currentTime 已经过了 deadline 时间点，还没过 expirationTime 时间点），后续的任务就会被挂起，交回渲染线程进行处理，同时告诉 MessageChannel 还有未执行的任务。
 
 为了避免饥饿，在 [workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 循环处理 taskQueue 队列前或中，它会调用 advanceTimers 将 timerQueue 中的任务移入 taskQueue 中。上文已经提到，startTime 时间一过，timerQueue 待执行任务队列中的任务就可以移入 taskQueue 将执行任务队列中，两者统一经由 taskQueue 执行。在 [workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 循环处理 taskQueue 队列后，如果 taskQueue 队列空了，[workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 就会调用 requestHostTimeout 函数执行 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105)。等 startTime 时间一过，timerQueue 中的任务就会被移入 taskQueue 中，继而再使用 [workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 循环处理。如果 timerQueue 到期需执行的任务不幸是无效的，[handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 就会递归调用自身，以处理 timerQueue 中下一个任务。因此，timerQueue 中的延时任务可以统一由 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 进行处理。
 
-简单地总结上述两段：[handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 用于处理 timerQueue 中的异步任务；[workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 会循环执行 taskQueue 中的同步任务，等到 taskQueue 处理完成后，再调用 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理异步任务。假设 unstable_scheduleCallback 创建的任务都是异步的，它会先等待 startTime 时间点，在这个过程中，如果我们再使用 unstable_scheduleCallback 创建同步任务，scheduler 就会撤销 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理，先处理同步任务，这在 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 函数中有所体现。[workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 也会通过 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 调用，并处理调用失败的任务。我们可以认为，[flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 用于处理 taskQueue 中的同步任务。对于一到 startTime 时间点的异步任务，[handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理时也会调用 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122)。这就是同、异步任务处理上的首尾相衔。
+简单地总结上述两段：[handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 用于处理 timerQueue 中的延时任务；[workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 会循环执行 taskQueue 中的即时任务，等到 taskQueue 处理完成后，再调用 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理延时任务。假设 unstable_scheduleCallback 创建的任务都是异步的，它会先等待 startTime 时间点，在这个过程中，如果我们再使用 unstable_scheduleCallback 创建即时任务，scheduler 就会撤销 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理，先处理即时任务，这在 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 函数中有所体现。[workLoop](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L164) 也会通过 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 调用，并处理调用失败的任务。我们可以认为，[flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 用于处理 taskQueue 中的即时任务。对于一到 startTime 时间点的延时任务，[handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理时也会调用 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122)。这就是同、延时任务处理上的首尾相衔。
 
 因此，这里总结下 unstable_scheduleCallback 的整体处理流程（下述，使用 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 处理指的是通过 requestHostCallback 调用 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122)；使用 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理指的是通过 requestHostTimeout 调用 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105)；撤销 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理指的是调用 cancelHostTimeout）：
 
-* 首次添加同步任务，使用 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 处理，设置 isHostCallbackScheduled 标识
-* 首次添加异步任务，使用 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理，设置 isHostTimeoutScheduled 标识
-* 同步任务处理中，再次添加同步任务，再次使用 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 处理
-* 同步任务处理中，再次添加异步任务，只将任务添加到 timerQueue 队列中
-* 异步任务处理中，再次添加同步任务，撤销 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理，转而使用  [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 处理
-* 异步任务处理中，再次添加异步任务，只将任务添加到 timerQueue 队列中
+* 首次添加即时任务，使用 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 处理，设置 isHostCallbackScheduled 标识
+* 首次添加延时任务，使用 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理，设置 isHostTimeoutScheduled 标识
+* 即时任务处理中，再次添加即时任务，再次使用 [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 处理
+* 即时任务处理中，再次添加延时任务，只将任务添加到 timerQueue 队列中
+* 延时任务处理中，再次添加即时任务，撤销 [handleTimeout](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L105) 处理，转而使用  [flushWork](https://github.com/facebook/react/blob/v16.13.0/packages/scheduler/src/Scheduler.js#L122) 处理
+* 延时任务处理中，再次添加延时任务，只将任务添加到 timerQueue 队列中
 
 以下是 unstable_scheduleCallback 函数的简要处理流程：
 
@@ -115,6 +115,16 @@ expirationTime 设置为 options.timeout 或由 priorityLevel 计算获得。即
 
 * unstable_scheduleCallback：以优先级调度的方式执行任务
 * unstable_runWithPriority：以指定优先级执行回调
+
+### 其他
+
+#### 内部使用
+
+react-reconciler 使用 SchedulerWithReactIntegration.js 对接 scheduler 模块，然后被显示调用。简要地讲，首先 react 内部优先级需要转化成 scheduler 优先级，其次 SchedulerWithReactIntegration.js 支持同步任务队列 syncQueue（优先级为 ImmediatePriority），它会调用 unstable_runWithPriority 一次性执行同步任务，并提供 scheduleSyncCallback 接口用于调度同步任务，最后即是对 scheduler 模块其他接口的包装。
+
+#### 不足
+
+React 中的调度 提到了 scheduler 模块的不足：不同的调度器实例在使用资源时会出现竞争关系；浏览器机制中的渲染、垃圾回收会使调度器无法正常工作。这方面，chrome 正在提供新的接口。我们也可以看到，SchedulerPostTask.js 模块正是基于 chrome 的新接口，完成调度作业的。
 
 ### 后记
 
