@@ -8,7 +8,7 @@ tags:
   - antd
   - validator
 keywords: '组件库,antd'
-abbrlink: 100830c9
+abbrlink: 6139fc9c
 date: 2020-05-31 06:00:00
 updated: 2020-05-31 06:00:00
 ---

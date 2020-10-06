@@ -95,3 +95,5 @@ demo 戳 [这里](https://github.com/Alfred-sg/spring-boot-demo)，工程目录�
 * AO（Application Object）：应用对象。在Web层与Service层之间抽象的复用对象模型，极为贴近展示层，复用度不高。
 * VO（View Object）：显示层对象，通常是Web向模板渲染引擎层传输的对象。
 * Query：数据查询对象，各层接收上层的查询请求。注意超过2个参数的查询封装，禁止使用Map类来传输。
+
+阿里巴巴开发手册另外提供了 IDEA 插件，可以戳 [这里](https://github.com/alibaba/p3c/blob/master/idea-plugin/README_cn.md)。
