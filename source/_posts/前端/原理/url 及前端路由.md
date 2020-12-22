@@ -52,7 +52,7 @@ protocol//host[:port][/path][?search][#hash]
 
 ### history
 
-history 提供了三种路由模式：
+[history](https://github.com/ReactTraining/history/tree/v5.0.0) 提供了三种路由模式：
 
 * browser 路由：通过 createBrowserHistory 创建 history 对象，该对象会基于 history.pushState 变更 path 页面路径
 * hash 路由：通过 createHashHistory 创建 history 对象，该对象会基于 history.pushState 变更 hash 路径
@@ -72,7 +72,7 @@ history 模块还提供了 createPath、parsePash 接口，用于创建和解析
 
 ### react-router
 
-react-router 首先会基于 history 库创建指定的 history 对象，这样就可以在 history 对象上绑定监听函数，以便驱动视图重绘。react-router 中的 Router 组件即会将 history 对象作为 props 属性，以此绑定监听函数，将最新的 Location 对象通过 context 机制传入下级组件。这些下级组件包含 Switch、Route、Redirect 组件。
+[react-router](https://github.com/ReactTraining/react-router/tree/v5.2.0) 首先会基于 history 库创建指定的 history 对象，这样就可以在 history 对象上绑定监听函数，以便驱动视图重绘。react-router 中的 Router 组件即会将 history 对象作为 props 属性，以此绑定监听函数，将最新的 Location 对象通过 context 机制传入下级组件。这些下级组件包含 Switch、Route、Redirect 组件。
 
 ![image](url5.png)
 
