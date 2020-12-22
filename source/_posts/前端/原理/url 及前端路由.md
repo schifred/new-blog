@@ -108,6 +108,8 @@ CacheComponent 会在路由匹配时将 state.cached 标识置为 true，即便 
 4. 反向跳出：渲染 null
 5. 跳回匹配路由：重新渲染组件实例
 
+![image](url6.png)
+
 因为 CacheComponent 在路由未匹配的时候也需要渲染，而 react-router 中的 Switch 组件会在路由未匹配时渲染 null，所以 react-router-cache-route 提供了 CacheSwitch、CacheRoute 等组件，即在路由未匹配时，也会渲染 CacheComponent。此外，CacheComponent 会缓存内部组件的滚动位置，以便使用缓存渲染时进行恢复。
 
 页面组件的业务属性各异，使得在技术层面很难提供一套通用页面组件缓存框架加以处理。比如从列表页跳到详情页，详情页中更新的数据需要回显在列表页上，这时候就不能使用缓存；从列表页跳到另一个列表页，这时候就需要缓存。在使用 react-router-cache-route 制作页面级组件缓存的基础上，我们可以调用 didRecover 钩子更新缓存页面的数据。
