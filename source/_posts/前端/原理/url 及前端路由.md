@@ -120,7 +120,7 @@ CacheComponent 会在路由匹配时将 state.cached 标识置为 true，即便 
 
 #### umi
 
-umi 可以读取 .umirc.ts 配置文件中的路由配置信息或扫描 pages 文件夹，然后制作 react-router 类路由，即 .umi/router.ts 运行时文件中的内容。umi 也允许在 app.ts 文件中使用 patchRoutes 接口追加路由。
+umi 可以读取 .umirc.ts 配置文件中的路由配置信息或扫描 pages 文件夹，然后制作 react-router 类路由，即 .umi/router.ts 运行时文件中的内容。umi 也允许在 app.ts 文件中使用 [patchRoutes](https://umijs.org/zh-CN/docs/runtime-config#patchroutes-routes-) 接口追加路由、[onRouterChange](https://umijs.org/zh-CN/docs/runtime-config#onroutechange-routes-matchedroutes-location-action-) 监听路由变更。
 
 #### remax
 
