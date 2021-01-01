@@ -77,7 +77,10 @@ history 模块还提供了 createPath、parsePash 接口，用于创建和解析
 ![image](url5.png)
 
 Route 组件与特定的 path 路径绑定，指浏览器地址为该路径，渲染 Route 组件内容。Route、Redirect 组件会作为 Switch 的子组件。因此，当 Switch 组件取得 location 对象后，就可以根据 location 切换渲染指定的 Route 内容了。Redirect 组件也是一样的，当它的 props.path 属性匹配 location 对象时，它就会执行 history.push 或 history.replace 方法跳转。
+
 在 Router 组件的基础上，BrowserRouter、HashRouter、MemoryRouter 等会与特定 history 挂钩的 Router 组件。Link 组件会渲染供跳转使用的 a 链接。
+
+![image](url51.png)
 
 此外，react-router 还提供了：
 
@@ -116,11 +119,111 @@ CacheComponent 会在路由匹配时将 state.cached 标识置为 true，即便 
 
 ### 研发框架中的前端路由
 
-基于 webpack 的研发框架可通过制作入口文件的方式，使用 react-router 集成路由功能。基本的路由功能包含静态的配置式路由，动态的运行时路由，懒加载，路由守卫，页面切换动效等。
+基于 webpack 的研发框架可通过制作入口文件的方式，使用 react-router 集成路由功能。基本的路由功能包含静态的配置式路由，动态的运行时路由，懒加载，路由守卫，页面切换动效，路由切换监听等。
 
 #### umi
 
 umi 可以读取 .umirc.ts 配置文件中的路由配置信息或扫描 pages 文件夹，然后制作 react-router 类路由，即 .umi/router.ts 运行时文件中的内容。umi 也允许在 app.ts 文件中使用 [patchRoutes](https://umijs.org/zh-CN/docs/runtime-config#patchroutes-routes-) 接口追加路由、[onRouterChange](https://umijs.org/zh-CN/docs/runtime-config#onroutechange-routes-matchedroutes-location-action-) 监听路由变更。
+
+以下是 umi3 生成的脚本代码：
+
+```ts
+// .umi/umi.ts
+import './core/polyfill';
+import '@@/core/devScripts';
+import '../global.ts';
+import { plugin } from './core/plugin';
+import './core/pluginRegister';
+import { createHistory } from './core/history';
+import { ApplyPluginsType } from 'YOUR_PROJECT_DIRECTORY/node_modules/_@umijs_runtime@3.2.28@@umijs/runtime';
+import { renderClient } from 'YOUR_PROJECT_DIRECTORY/node_modules/_@umijs_renderer-react@3.2.28@@umijs/renderer-react/dist/index.js';
+import { getRoutes } from './core/routes';
+
+const getClientRender = (args: { hot?: boolean; routes?: any[] } = {}) => plugin.applyPlugins({
+  key: 'render',
+  type: ApplyPluginsType.compose,
+  initialValue: () => {
+    const opts = plugin.applyPlugins({
+      key: 'modifyClientRenderOpts',
+      type: ApplyPluginsType.modify,
+      initialValue: {
+        routes: args.routes || getRoutes(),
+        plugin,
+        history: createHistory(args.hot),
+        isServer: process.env.__IS_SERVER,
+        dynamicImport: true,
+        rootElement: 'root-master',
+        defaultTitle: ``,
+      },
+    });
+    return renderClient(opts);
+  },
+  args,
+});
+
+const clientRender = getClientRender();
+export default clientRender();
+
+// .umi/core/history.ts
+import { createHashHistory } from 'YOUR_PROJECT_DIRECTORY/node_modules/_@umijs_runtime@3.2.28@@umijs/runtime';
+
+let options = {
+  "basename": "/"
+};
+if ((<any>window).routerBase) {
+  options.basename = (<any>window).routerBase;
+}
+
+// remove initial history because of ssr
+let history: any = process.env.__IS_SERVER ? null : createHashHistory(options);
+export const createHistory = (hotReload = false) => {
+  if (!hotReload) {
+    history = createHashHistory(options);
+  }
+
+  return history;
+};
+
+export { history };
+
+// .umi/core/router.ts
+import React from 'react';
+import { ApplyPluginsType, dynamic } from 'YOUR_PROJECT_DIRECTORY/node_modules/_@umijs_runtime@3.2.28@@umijs/runtime';
+import * as umiExports from './umiExports';
+import { plugin } from './plugin';
+
+export function getRoutes() {
+  const routes = [{
+    "path": "/",
+    "component": dynamic({ loader: () => import(/* webpackChunkName: 'layouts__index' */'YOUR_PROJECT_DIRECTORY/src/layouts/index.tsx')}),
+    "routes": [
+      {
+        "path": "/login",
+        "component": dynamic({ loader: () => import(/* webpackChunkName: 'p__login' */'YOUR_PROJECT_DIRECTORY/src/pages/login')}),
+        "exact": true
+      },
+      {
+        "path": "/",
+        "isMenu": true,
+        "title": "首页",
+        "icon": "home",
+        "component": dynamic({ loader: () => import(/* webpackChunkName: 'p__index' */'YOUR_PROJECT_DIRECTORY/src/pages/index.tsx')}),
+        "wrappers": [dynamic({ loader: () => import(/* webpackChunkName: 'wrappers' */'@/routes/Authorization.tsx')})],
+        "exact": true
+      }
+    ]
+  }];
+
+  // allow user to extend routes
+  plugin.applyPlugins({
+    key: 'patchRoutes',
+    type: ApplyPluginsType.event,
+    args: { routes },
+  });
+
+  return routes;
+}
+```
 
 #### remax
 
